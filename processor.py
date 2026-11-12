@@ -8,26 +8,51 @@ async def fetch_url(client, url):
         response = await client.get(url, timeout=5.0)
         response.raise_for_status()
         return {
-            "URL":url,
-            "Valid":True
+            "url":url,
+            "status":"success",
+            "status_code":200,
+            "error_type":None,
+            "message":"OK"
+        }
+
+    except httpx.TimeoutException as e:
+        return {
+            "url":url,
+            "status":"error",
+            "status_code":None,
+            "error_type":"TimeoutException",
+            "message":f"Request timeout: {str(e)}"
         }
 
     except httpx.HTTPStatusError as e:
-        print(f"HTTP error: {str(e)}")
+                return {
+            "url":url,
+            "status":"error",
+            "status_code":e.response.status_code,
+            "error_type":"HTTPStatusError",
+            "message":f"Client error: {str(e)}"
+        }
+
     except httpx.RequestError as e:
-        print(f"Request error: {str(e)}")
+                return {
+            "url":url,
+            "status":"error",
+            "status_code":None,
+            "error_type":"RequestError",
+            "message":f"Connection failed: {str(e)}"
+        }
+
     except Exception as e:
-        print(f"Unexpected error: {str(e)}")
-
-    return {
-        "URL":url,
-        "Valid":False
-        }           
-
+                return {
+            "url":url,
+            "status":"error",
+            "status_code":None,
+            "error_type":"UnexpectedError",
+            "message":f"Unexpected error: {str(e)}"
+        }
 
 async def process_urls(URLS):
     valid_count = 0
-    valid_urls = []
 
     start_time = time.perf_counter()
 
@@ -36,9 +61,8 @@ async def process_urls(URLS):
             results = await asyncio.gather(*(fetch_url(client, url) for url in URLS))
 
             for result in results:
-                if result["Valid"]:
+                if result["status_code"] == 200:
                     valid_count += 1
-                    valid_urls.append(result["URL"])
 
         except Exception as e:
             print(f"Asyncio error: {str(e)}")
@@ -47,9 +71,11 @@ async def process_urls(URLS):
     exe_time = round(end_time - start_time, 2)
 
     return {
-        "Execution_time": exe_time,
-        "Valid_URL_count":valid_count,
-        "Valid_URLS":valid_urls
+        "execution_time": exe_time,
+        "total_processed":len(URLS),
+        "success_count":valid_count,
+        "error_count":len(URLS) - valid_count,
+        "results":results
     }         
                      
 

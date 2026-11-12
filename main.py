@@ -1,13 +1,23 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from processor import process_urls
+from typing import Optional
 
 app = FastAPI()
 
+class URLResult(BaseModel):
+    url: str
+    status: str
+    status_code: Optional[int] = None
+    error_type: Optional[str] = None
+    message: str
+
 class Response(BaseModel):
-    Execution_time: float
-    Valid_URL_count: int
-    Valid_URLS: list[str]
+    execution_time: float
+    total_processed: int
+    success_count: int
+    error_count: int
+    results: list[URLResult]
 
 class Request(BaseModel):
     URLS: list[str]    
