@@ -20,14 +20,19 @@ class Response(BaseModel):
     results: list[URLResult]
 
 class Request(BaseModel):
-    URLS: list[str]    
+    urls: list[str]
+    semaphore_limit: Optional[int] = 20    
 
 @app.post("/process/url_batch/", response_model=Response)
 async def main(url_batch: Request):
-    if not url_batch.URLS:
+    if not url_batch.urls:
         raise HTTPException(status_code=400, detail="URL batch request cannot be empty!")
 
-    result = await process_urls(url_batch.URLS)
+    request = {
+        "urls":url_batch.urls,
+        "semaphore_limit":url_batch.semaphore_limit
+    }
+    result = await process_urls(request)
 
     return result
 
